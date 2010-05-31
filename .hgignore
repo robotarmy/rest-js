@@ -1,0 +1,11 @@
+# use glob syntax.
+syntax: glob
+
+*.swp
+*.pyc
+*~
+*.o
+
+# switch to regexp syntax.
+syntax: regexp
+

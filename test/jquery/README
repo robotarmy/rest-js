@@ -1,0 +1,9 @@
+Test some aspects of jquery ajax stuff.
+Let us easily compare behaviours on different browsers.
+
+To run the server:
+node  test/jquery/server.js
+
+To run the tests, go to the following url using your browser:
+http://127.0.0.1:8001/
+
