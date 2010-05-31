@@ -16,8 +16,8 @@ Browsers compatibilities
     * IE (8): passes all tests
     * Safari (4): passes all tests
     * Chrome (Chromium 4): passes all tests
-    * Opera (10): passes all tests* (see BugsAndLimitations)
-    * Konqueror (4.3.4): passes all tests* (see BugsAndLimitations) 
+    * Opera (10): passes all tests* (see http://wiki.github.com/robotarmy/rest-js/bugsandlimitations)
+    * Konqueror (4.3.4): passes all tests* (see http://wiki.github.com/robotarmy/rest-js/bugsandlimitations) 
 
 
 Created by:

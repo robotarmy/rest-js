@@ -1,8 +1,8 @@
 var sys = require('sys'), 
     http = require('http'),
     URL = require('url'),
-    posix = require('posix');
-
+    posix = require('fs'),
+    _path =require('path');
 var file_resources = {
   '/json2.js': 'libs/json2.js',
   '/rest.js': 'rest.js',
@@ -12,7 +12,7 @@ var file_resources = {
   '/qunit.css': 'test/qunit/qunit.css',
   '/tests_server.js': 'test/functional/tests_server.js',
   '/tests.js': 'test/functional/tests.js',
-  '/tests': 'test/functional/tests.html',
+  '/tests.html': 'test/functional/tests.html',
 };
 
 var DATA = {
@@ -36,9 +36,9 @@ var DATA = {
 
   p4: undefined,
 };
-var ORIGINAL_DATA = {};
-process.mixin(true, ORIGINAL_DATA, DATA);
-
+var ORIGINAL_DATA = DATA;
+global.DATA = DATA;
+global.ORIGINAL_DATA = ORIGINAL_DATA;
 
 var map = function(list, func) {
   var new_list = [];
@@ -51,7 +51,7 @@ var map = function(list, func) {
 
 function get_post_params(req, callback) {
   var body = "";
-  req.setBodyEncoding('utf-8');
+  req.setEncoding('utf-8');
   req.addListener("body", function(chunk) { body += chunk; }).addListener("complete", function() {
     callback(body);
     //callback(unescape(body.replace(/\+/g," ")));
@@ -63,34 +63,36 @@ http.createServer(function (req, res) {
   var url = URL.parse(req.url, parseQueryString=true);
   
   if(url.pathname in file_resources){
-    var path = file_resources[url.pathname];
+    var path = _path.join('..','..',file_resources[url.pathname]);
     var type;
     if(path.match(/\.js$/)) type = {'Content-Type': 'application/javascript'};
     else if(path.match(/\.css$/)) type = {'Content-type': 'text/css'};
     else if(path.match(/\.html$/)) type = {'Content-Type': 'text/html'}
-    else type = {};
+    else type = {'Content-Type': 'text/plain'}
     //var fd = posix.open(path, process.O_RDONLY,'r');
-    res.sendHeader(200, type);
-    posix.cat(path).addCallback(function(content){
-      res.sendBody(content, encoding="utf-8");
-      res.finish();
-    });
+    res.writeHead(200, type);
+    content = posix.readFileSync(path)
+    res.write(content, encoding="utf-8");
+    res.end();
   }
 
   else if(url.pathname == '/tests/reinit_data'){
     sys.puts("Reinit the DATA");
-    DATA = {};
-    process.mixin(true, DATA, ORIGINAL_DATA);
-    res.sendHeader(200, {'Content-Type': 'text/html'});
-    res.sendBody('Data re initialized');
-    res.finish();
+    sys.puts("WAS: "+JSON.stringify(global.ORIGINAL_DATA));
+    global.DATA = {};
+    sys.puts("IS: "+JSON.stringify(global.DATA));
+    global.DATA = global.ORIGINAL_DATA;
+    sys.puts("IS: "+JSON.stringify(global.DATA));
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.write('Data re initialized');
+    res.end();
   }
 
   else if(url.query && url.query.error_){
     // We want to simulate an error
-    res.sendHeader(500);
-    res.sendBody('1');
-    res.finish();
+    res.writeHead(500);
+    res.write('1');
+    res.end();
   }
 
   else if(reg_res = url.pathname.match(/^\/people\/(\d+(,\d+)*)?$/)){
@@ -98,7 +100,7 @@ http.createServer(function (req, res) {
     if(reg_res[1] === undefined){
       
       if(req.method == 'GET'){// index
-        res.sendHeader(200, {'Content-Type': 'application/json'});
+        res.writeHead(200, {'Content-Type': 'application/json'});
         var offset, limit;
         if(url.query) {
           offset = url.query.offset || 0;
@@ -108,13 +110,13 @@ http.createServer(function (req, res) {
         var total = items.length;
         items = items.splice(offset);
         if(limit) items.length = Math.min(items.length, limit);
-        res.sendBody(JSON.stringify({
+        res.write(JSON.stringify({
           items: items,
           from: offset + 1,
           to: offset + items.length,
           total: total,
         }));
-        res.finish();
+        res.end();
       }
 
       else { // Post
@@ -123,18 +125,18 @@ http.createServer(function (req, res) {
           data = JSON.parse(data);
           if(!data || !data.firstname || // bad data
              DATA.p4){ // No new Person accepted anymore
-            res.sendHeader(403);
-            res.sendBody('1');
-            res.finish();
+            res.writeHead(403);
+            res.write('1');
+            res.end();
           }
           else {
             data.id = 4;
             if(data.mother == undefined) data.mother = null;
             if(data.friends == undefined) data.friends = [];
             DATA.p4 = data;
-            res.sendHeader(200, {'Content-Type': 'application/json'});
-            res.sendBody(JSON.stringify(data));
-            res.finish();
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify(data));
+            res.end();
           }
         });
       }
@@ -148,53 +150,53 @@ http.createServer(function (req, res) {
         var id = ids[i];
         if(id==3) person3 = true;
         if(!DATA['p'+id]){
-          res.sendHeader(404);
-          res.sendBody('1');
-          res.finish();
+          res.writeHead(404);
+          res.write('1');
+          res.end();
           return;
         }
       }
       sys.puts(ids);
       
       if(req.method == 'GET'){
-        res.sendHeader(200, {'Content-Type': 'application/json'});
+        res.writeHead(200, {'Content-Type': 'application/json'});
         var data = map(ids, function(id){return DATA['p'+id]});
         if(data.length == 1) data = data[0];
-        res.sendBody(JSON.stringify(data));
-        res.finish();
+        res.write(JSON.stringify(data));
+        res.end();
       }
       else get_post_params(req, function(data){
         if(person3){ // Dont't touch Person with id 3 !
-          res.sendHeader(403);
-          res.sendBody('1');
-          res.finish();
+          res.writeHead(403);
+          res.write('1');
+          res.end();
           return;
         }
         data = JSON.parse(data);
         if(data.method_ == 'PUT'){
           map(ids, function(id){
-            process.mixin(DATA['p'+id], data.data);
+            DATA['p'+id] = data.data;
           });
-          res.sendHeader(200);
-          res.sendBody('1');
-          res.finish();
+          res.writeHead(200);
+          res.write('1');
+          res.end();
         }
         else if(data.method_ == 'DELETE'){
           map(ids, function(id){
             delete DATA['p'+id];
           });
-          res.sendHeader(200);
-          res.sendBody('1');
-          res.finish();
+          res.writeHead(200);
+          res.write('1');
+          res.end();
         }
       });
     }
   }
 
   else {
-    res.sendHeader(404);
-    res.sendBody('1');
-    res.finish();
+    res.writeHead(404);
+    res.write('1');
+    res.end();
   }
 
 }).listen(8000);
