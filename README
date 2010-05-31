@@ -1,0 +1,24 @@
+
+Make it easier to access Rest APIs using javascript.
+
+This library depends on JQuery, dependencies can easily be removed though.
+Main files
+
+    * rest.js : core code. Have to init it with a schema variable. Then you can manipulate objects with methods R.ObjectClass.get, R.ObjectClass.update, R.ObjectClass.delete...
+    * test/functional/tests.js : core tests (using QUnit). Read it to see how to use the lib.
+    * test/functional/server.js : tests server, running with node.js.
+    * test/functional/tests_server.js : tests server tests (using Qunit too). If you want to see how acts the server for testing, it's here.
+    * test/functional/schema.js : used schema to test the lib (cf. http://json-schema.org/) 
+
+Browsers compatibilities
+
+    * Firefox (3.5): passes all tests
+    * IE (8): passes all tests
+    * Safari (4): passes all tests
+    * Chrome (Chromium 4): passes all tests
+    * Opera (10): passes all tests* (see BugsAndLimitations)
+    * Konqueror (4.3.4): passes all tests* (see BugsAndLimitations) 
+
+
+Created by:
+pierre.ruyssen
